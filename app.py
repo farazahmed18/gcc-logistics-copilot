@@ -33,20 +33,8 @@ st.markdown("""
         padding-bottom: 2rem;
     }
     
-    /* 🎯 Hide the entire right-side Streamlit toolbar (Share, Star, Deploy, etc.) */
+    /* 🎯 Safely hide the entire right-side Streamlit toolbar (Share, Star, Deploy, etc.) */
     [data-testid="stToolbar"] {display: none !important;}
-    
-    /* 🍔 REPLACE ARROW WITH HAMBURGER MENU */
-    [data-testid="collapsedControl"] svg {
-        display: none !important; /* Hide the default arrow SVG */
-    }
-    [data-testid="collapsedControl"]::before {
-        content: "☰"; /* Inject the hamburger menu character */
-        font-size: 1.8rem;
-        color: #0f172a;
-        line-height: 1;
-        margin-left: 5px;
-    }
     
     /* Style the main title */
     .stMarkdown h1 {
