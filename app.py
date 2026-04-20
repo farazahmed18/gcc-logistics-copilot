@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import random
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_community.embeddings import HuggingFaceEmbeddings
@@ -123,12 +124,22 @@ def get_chat_history_string(messages):
 # 5.5 DYNAMIC SUGGESTIONS ENGINE
 # ==========================================
 def get_dynamic_suggestions():
-    # Only generate these once per session to keep the app lightning fast
     if "kb_suggestions" not in st.session_state:
         try:
-            # 1. Pull a broad sample from your vector store
-            docs = retriever.invoke("Key regulations and procedures in UAE trade")
-            context = "\n".join([doc.page_content for doc in docs[:2]]) # Top 2 chunks
+            # 1. Inject Randomness into the Retrieval
+            seed_topics = [
+                "JAFZA company setup and visas",
+                "UAE customs clearance steps",
+                "GCC VAT regulations and penalties",
+                "Free trade zone benefits in UAE",
+                "Prohibited items and import restrictions"
+            ]
+            random_query = random.choice(seed_topics)
+            
+            # Pull 5 docs, then randomly select 2 to ensure maximum variety
+            docs = retriever.invoke(random_query)
+            sample_docs = random.sample(docs[:5], 2) if len(docs) >= 2 else docs
+            context = "\n".join([doc.page_content for doc in sample_docs])
             
             # 2. Ask Llama to reverse-engineer questions from those chunks
             prompt = f"""
@@ -137,8 +148,8 @@ def get_dynamic_suggestions():
             Keep them under 10 words each.
             Text: {context}
             """
-            # Using slightly higher temperature (0.5) for more creative questions
-            llm_suggester = ChatGroq(groq_api_key=GROQ_API_KEY, model_name="llama-3.3-70b-versatile", temperature=0.5)
+            # Using higher temperature (0.7) for more creative questions
+            llm_suggester = ChatGroq(groq_api_key=GROQ_API_KEY, model_name="llama-3.3-70b-versatile", temperature=0.7)
             response = llm_suggester.invoke(prompt).content
             
             # 3. Clean up the response
@@ -150,7 +161,7 @@ def get_dynamic_suggestions():
             st.session_state.kb_suggestions = questions
             
         except Exception:
-            # Safe fallback just in case the LLM formatting breaks
+            # Safe fallback
             st.session_state.kb_suggestions = [
                 "What is JAFZA?", 
                 "Explain VAT penalties.", 
@@ -195,6 +206,11 @@ with st.sidebar:
         st.session_state.all_chats[new_id] = []
         st.session_state.chat_titles[new_id] = "New Chat"
         st.session_state.current_chat_id = new_id
+        
+        # --- NEW: Force fresh suggestions on new chat ---
+        if "kb_suggestions" in st.session_state:
+            del st.session_state["kb_suggestions"]
+            
         st.rerun()
 
     st.divider()
