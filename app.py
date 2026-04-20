@@ -182,7 +182,7 @@ if "current_chat_id" not in st.session_state:
 
 with st.sidebar:
     st.title("🚢 GCC Intelligence")
-    st.info("💡 **Pro-Tip:** Ask about JAFZA regulations, import steps, or VAT penalties for source-verified results.")
+    st.info("**Pro-Tip:** Ask about JAFZA regulations, import steps, or VAT penalties for source-verified results.")
     
     # System Status Indicators
     st.success("Knowledge Base: Online")
@@ -191,11 +191,11 @@ with st.sidebar:
     
     # --- MOVED METRICS HERE ---
     with st.expander("⚙️ System Architecture"):
-        st.markdown("**🧠 Core LLM**<br>Llama 3.3 (70B)", unsafe_allow_html=True)
+        st.markdown("**Core LLM**<br>Llama 3.3 (70B)", unsafe_allow_html=True)
         st.write("") # small spacer
-        st.markdown("**⚡ Orchestration**<br>LangChain & Groq", unsafe_allow_html=True)
+        st.markdown("**Orchestration**<br>LangChain & Groq", unsafe_allow_html=True)
         st.write("")
-        st.markdown("**📚 Retrieval Engine**<br>ChromaDB Local", unsafe_allow_html=True)
+        st.markdown("**Retrieval Engine**<br>ChromaDB Local", unsafe_allow_html=True)
     st.divider()
     
     st.subheader("Conversations")
