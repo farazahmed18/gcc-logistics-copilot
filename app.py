@@ -22,7 +22,7 @@ os.environ["LANGCHAIN_PROJECT"] = "Logistics_Copilot_Hackathon"
 # 2. PAGE CONFIG & CUSTOM CSS
 # ==========================================
 # Layout centered for a much cleaner, tighter chat interface
-st.set_page_config(page_title="UAE & GCC Logistics Copilot", page_icon="🚢", layout="centered", initial_sidebar_state="expanded")
+st.set_page_config(page_title="UAE & GCC Logistics Copilot", page_icon="🚢", layout="centered", initial_sidebar_state="collapsed")
 
 # Inject Custom CSS for an Enterprise feel
 st.markdown("""
@@ -33,9 +33,12 @@ st.markdown("""
         padding-bottom: 2rem;
     }
     
-    /* Hide ONLY the hamburger menu and footer, keep the header for the sidebar toggle */
-    [data-testid="stToolbar"] {visibility: hidden !important;}
-    footer {visibility: hidden !important;}
+    /* 🎯 THE MAGIC FIX: Hide the "Deploy" button and the Streamlit menu (three dots) */
+    .stAppDeployButton {display:none !important;}
+    [data-testid="stToolbar"] {display:none !important;}
+    
+    /* Keep the header background transparent so it blends in */
+    [data-testid="stHeader"] {background-color: transparent;}
     
     /* Style the main title */
     .stMarkdown h1 {
