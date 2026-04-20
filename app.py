@@ -21,31 +21,41 @@ os.environ["LANGCHAIN_PROJECT"] = "Logistics_Copilot_Hackathon"
 # ==========================================
 # 2. PAGE CONFIG & CUSTOM CSS
 # ==========================================
-st.set_page_config(page_title="UAE & GCC Logistics Copilot", page_icon="🚢", layout="wide")
+# Layout centered for a much cleaner, tighter chat interface
+st.set_page_config(page_title="UAE & GCC Logistics Copilot", page_icon="🚢", layout="centered")
 
 # Inject Custom CSS for an Enterprise feel
 st.markdown("""
     <style>
-    /* Rounded chat bubbles */
-    .stChatMessage {
-        border-radius: 10px;
-        padding: 10px;
+    /* Pull the main content up and remove extra padding */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
     }
-    /* Dark professional blue for main titles */
+    
+    /* Hide Streamlit's default header and footer */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Style the main title */
     .stMarkdown h1 {
-        color: #0f172a; 
+        color: #0f172a;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    /* Give chat bubbles a clean, bordered box look */
+    .stChatMessage {
+        border-radius: 12px;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        background-color: #f8fafc;
+        margin-bottom: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("🚢 UAE & GCC Logistics Copilot")
-
-# --- AI SYSTEM METRICS ---
-col1, col2, col3 = st.columns(3)
-col1.metric("🧠 Core LLM", "Llama 3.3 (70B)")
-col2.metric("⚡ Orchestration", "LangChain & Groq")
-col3.metric("📚 Retrieval Engine", "ChromaDB Local")
-st.divider()
 
 # ==========================================
 # 3. AI ENGINE LOAD
@@ -127,6 +137,13 @@ with st.sidebar:
     # System Status Indicators
     st.success("✅ Knowledge Base: Online")
     st.success("✅ Tracing: LangSmith Active")
+    st.divider()
+    
+    # --- MOVED METRICS HERE ---
+    with st.expander("⚙️ System Architecture"):
+        st.metric("🧠 Core LLM", "Llama 3.3 (70B)")
+        st.metric("⚡ Orchestration", "LangChain & Groq")
+        st.metric("📚 Retrieval Engine", "ChromaDB Local")
     st.divider()
     
     st.subheader("💬 Conversations")
