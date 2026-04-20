@@ -55,7 +55,7 @@ Context from Local Knowledge Base:
 Question: {question}
 Answer:"""
 
-prompt = ChatPromptTemplate.from_template(template)
+prompt_template = ChatPromptTemplate.from_template(template)
 
 # 4. Helpers
 def format_docs_with_sources(docs):
@@ -73,6 +73,8 @@ def get_chat_history_string(messages):
 # 5. UI Initialization & Multi-Chat Memory
 if "all_chats" not in st.session_state:
     st.session_state.all_chats = {"Chat 1": []}
+if "chat_titles" not in st.session_state:
+    st.session_state.chat_titles = {"Chat 1": "New Chat"}
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = "Chat 1"
 
@@ -86,6 +88,7 @@ with st.sidebar:
     if st.button("➕ New Chat"):
         new_id = f"Chat {len(st.session_state.all_chats) + 1}"
         st.session_state.all_chats[new_id] = []
+        st.session_state.chat_titles[new_id] = "New Chat"
         st.session_state.current_chat_id = new_id
         st.rerun()
 
@@ -95,6 +98,7 @@ with st.sidebar:
     selected_chat = st.radio(
         "Previous Conversations",
         options=list(st.session_state.all_chats.keys()),
+        format_func=lambda x: st.session_state.chat_titles.get(x, x),
         index=list(st.session_state.all_chats.keys()).index(st.session_state.current_chat_id)
     )
     
@@ -103,7 +107,7 @@ with st.sidebar:
         st.session_state.current_chat_id = selected_chat
         st.rerun()
 
-# 6. Render the Active Chat
+# 6. Render the Active Chat History
 active_history = st.session_state.all_chats[st.session_state.current_chat_id]
 
 for msg in active_history:
@@ -112,6 +116,16 @@ for msg in active_history:
 
 # 7. Specialized Logistics Chat Input
 if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port procedures..."):
+    
+    # --- GENERATE SMART TITLE (On First Message Only) ---
+    if len(st.session_state.all_chats[st.session_state.current_chat_id]) == 0:
+        try:
+            title_prompt = f"Summarize this logistics query into 3 words maximum for a sidebar menu title. Do not use quotes or periods. Query: {user_input}"
+            smart_title = llm.invoke(title_prompt).content.strip('". ')
+            st.session_state.chat_titles[st.session_state.current_chat_id] = smart_title
+        except:
+            pass 
+
     # Append user message to the specific active chat
     st.session_state.all_chats[st.session_state.current_chat_id].append({"role": "user", "content": user_input})
     
@@ -124,18 +138,19 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
                 raw_docs = retriever.invoke(user_input)
                 context_payload, source_list = format_docs_with_sources(raw_docs)
                 
-                # Fetch history for the current active chat only (excluding the brand new prompt)
-                chat_history = get_chat_history_string(st.session_state.all_chats[st.session_state.current_chat_id][:-1])
+                # Fetch history for the current active chat
+                chat_history_str = get_chat_history_string(st.session_state.all_chats[st.session_state.current_chat_id][:-1])
                 
-                response = llm.invoke(
-                    prompt.format(
+                response_obj = llm.invoke(
+                    prompt_template.format(
                         context=context_payload,
                         question=user_input,
-                        chat_history=chat_history
+                        chat_history=chat_history_str
                     )
-                ).content
+                )
+                response = response_obj.content
                 
-                if source_list:
+                if source_list and "I cannot assist" not in response:
                     response += "\n\n**📑 Verified UAE/GCC Sources:**\n" + "\n".join([f"- {s}" for s in source_list])
                 
                 st.markdown(response)
@@ -144,4 +159,4 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
                 st.session_state.all_chats[st.session_state.current_chat_id].append({"role": "assistant", "content": response})
                 
             except Exception as e:
-                st.error(f"Error: {str(e)}")
+                st.error(f"Error connecting to AI engine: {str(e)}")
