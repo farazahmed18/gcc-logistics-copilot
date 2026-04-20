@@ -6,7 +6,7 @@
 
 <hr>
 
-<h2>📋 Project Overview</h2>
+<h2> Project Overview</h2>
 <p>
   <b>Problem:</b> Navigating UAE and GCC logistics involves manually parsing hundreds of pages of complex, region-specific customs and free zone manuals, often leading to costly compliance errors.
 </p>
@@ -21,7 +21,7 @@
 
 <hr>
 
-<h2>🛠️ Tech Stack</h2>
+<h2> Tech Stack</h2>
 <ul>
   <li><b>LLM:</b> Llama 3.3 (via Groq for ultra-low latency)</li>
   <li><b>Vector Database:</b> ChromaDB (Local Persistence)</li>
@@ -33,7 +33,7 @@
 
 <hr>
 
-<h2>🔐 Security & Setup</h2>
+<h2> Security & Setup</h2>
 <p>This project follows industry-standard security protocols for API key management. <b>Secrets are never hard-coded into the codebase.</b></p>
 
 <h3>Local Installation:</h3>
@@ -57,7 +57,7 @@
 
 <hr>
 
-<h2>📊 Observability & Reliability</h2>
+<h2> Observability & Reliability</h2>
 <p>To solve the "black box" problem of traditional AI, this project implements <b>LangSmith Tracing</b>:</p>
 <ul>
   <li><b>Source Verification:</b> Every response is cross-referenced against the local vectorstore.</li>
