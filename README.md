@@ -72,5 +72,5 @@
 <hr>
 
 <div align="center">
-  <p><i>Developed by Faraz Ahmed Siddiqui for the AI Engineering Hackathon - 2026</i></p>
+  <p><i>Developed by Faraz Ahmed Siddiqui for the GenAI Engineering Hackathon - 2026</i></p>
 </div>
