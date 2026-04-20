@@ -1,30 +1,55 @@
-# source_handbook: week11-hackathon-preparation
-
 import streamlit as st
 import os
 from dotenv import load_dotenv
-from operator import itemgetter
 from langchain_groq import ChatGroq
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough, RunnableParallel
-from langchain_core.output_parsers import StrOutputParser
 
-# 1. Setup & Keys
+# ==========================================
+# 1. SETUP & OBSERVABILITY
+# ==========================================
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# --- LANGSMITH OBSERVABILITY SETUP ---
-# LangChain looks for these specific OS environment variables to enable tracing
+# LangSmith Observability Setup
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
 os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY") 
 os.environ["LANGCHAIN_PROJECT"] = "Logistics_Copilot_Hackathon"
 
+# ==========================================
+# 2. PAGE CONFIG & CUSTOM CSS
+# ==========================================
 st.set_page_config(page_title="UAE & GCC Logistics Copilot", page_icon="🚢", layout="wide")
+
+# Inject Custom CSS for an Enterprise feel
+st.markdown("""
+    <style>
+    /* Rounded chat bubbles */
+    .stChatMessage {
+        border-radius: 10px;
+        padding: 10px;
+    }
+    /* Dark professional blue for main titles */
+    .stMarkdown h1 {
+        color: #0f172a; 
+    }
+    </style>
+    """, unsafe_allow_code=True)
+
 st.title("🚢 UAE & GCC Logistics Copilot")
-# 2. Load AI Engine
+
+# --- AI SYSTEM METRICS ---
+col1, col2, col3 = st.columns(3)
+col1.metric("🧠 Core LLM", "Llama 3.3 (70B)")
+col2.metric("⚡ Orchestration", "LangChain & Groq")
+col3.metric("📚 Retrieval Engine", "ChromaDB Local")
+st.divider()
+
+# ==========================================
+# 3. AI ENGINE LOAD
+# ==========================================
 @st.cache_resource
 def load_ai_engine():
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -40,7 +65,9 @@ def load_ai_engine():
 
 retriever, llm = load_ai_engine()
 
-# 3. Dubai & GCC Consultant Prompt
+# ==========================================
+# 4. CONSULTANT PROMPT TEMPLATE
+# ==========================================
 template = """
 You are a Senior UAE & GCC Logistics Consultant. 
 
@@ -68,7 +95,9 @@ Answer:"""
 
 prompt_template = ChatPromptTemplate.from_template(template)
 
-# 4. Helpers
+# ==========================================
+# 5. HELPER FUNCTIONS
+# ==========================================
 def format_docs_with_sources(docs):
     context_text = ""
     sources = set()
@@ -76,12 +105,14 @@ def format_docs_with_sources(docs):
         source_name = os.path.basename(doc.metadata.get('source', 'UAE Trade Docs'))
         sources.add(source_name)
         context_text += f"\n---\nSOURCE: {source_name}\nCONTENT: {doc.page_content}\n"
-    return context_text, sources
+    return context_text, list(sources)
 
 def get_chat_history_string(messages):
     return "\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in messages[-5:]])
 
-# 5. UI Initialization & Multi-Chat Memory
+# ==========================================
+# 6. UI SESSION STATE & SIDEBAR
+# ==========================================
 if "all_chats" not in st.session_state:
     st.session_state.all_chats = {"Chat 1": []}
 if "chat_titles" not in st.session_state:
@@ -89,14 +120,19 @@ if "chat_titles" not in st.session_state:
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = "Chat 1"
 
-# --- SIDEBAR UI ---
 with st.sidebar:
-    st.info("AI-Powered UAE & GCC Trade Intelligence | Source-Verified")
-    st.divider()
-    st.subheader("💬 Chat History")
+    st.title("🚢 GCC Intelligence")
+    st.info("💡 **Pro-Tip:** Ask about JAFZA regulations, import steps, or VAT penalties for source-verified results.")
     
-    # The "New Chat" Button
-    if st.button("➕ New Chat"):
+    # System Status Indicators
+    st.success("✅ Knowledge Base: Online")
+    st.success("✅ Tracing: LangSmith Active")
+    st.divider()
+    
+    st.subheader("💬 Conversations")
+    
+    # New Chat Button
+    if st.button("➕ New Chat", use_container_width=True):
         new_id = f"Chat {len(st.session_state.all_chats) + 1}"
         st.session_state.all_chats[new_id] = []
         st.session_state.chat_titles[new_id] = "New Chat"
@@ -105,30 +141,32 @@ with st.sidebar:
 
     st.divider()
     
-    # The Chat Selector (Radio Buttons)
+    # Chat History Selector
     selected_chat = st.radio(
-        "Previous Conversations",
+        "History",
         options=list(st.session_state.all_chats.keys()),
         format_func=lambda x: st.session_state.chat_titles.get(x, x),
-        index=list(st.session_state.all_chats.keys()).index(st.session_state.current_chat_id)
+        index=list(st.session_state.all_chats.keys()).index(st.session_state.current_chat_id),
+        label_visibility="collapsed"
     )
     
-    # Switch chat if a different one is selected
+    # Switch Chat Logic
     if selected_chat != st.session_state.current_chat_id:
         st.session_state.current_chat_id = selected_chat
         st.rerun()
 
-# 6. Render the Active Chat History
+# ==========================================
+# 7. RENDER ACTIVE CHAT & PROCESS INPUT
+# ==========================================
 active_history = st.session_state.all_chats[st.session_state.current_chat_id]
 
 for msg in active_history:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# 7. Specialized Logistics Chat Input
 if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port procedures..."):
     
-    # --- GENERATE SMART TITLE (On First Message Only) ---
+    # Generate Smart Title (On First Message Only)
     if len(st.session_state.all_chats[st.session_state.current_chat_id]) == 0:
         try:
             title_prompt = f"Summarize this logistics query into 3 words maximum for a sidebar menu title. Do not use quotes or periods. Query: {user_input}"
@@ -137,7 +175,7 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
         except:
             pass 
 
-    # Append user message to the specific active chat
+    # Append user message
     st.session_state.all_chats[st.session_state.current_chat_id].append({"role": "user", "content": user_input})
     
     with st.chat_message("user"):
@@ -146,14 +184,14 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
     with st.chat_message("assistant"):
         with st.spinner("Consulting GCC trade documents..."):
             try:
-                # 1. Get the docs
+                # 1. Retrieve Docs
                 raw_docs = retriever.invoke(user_input)
                 context_payload, source_list = format_docs_with_sources(raw_docs)
                 
-                # 2. Get history
+                # 2. Extract History
                 chat_history_str = get_chat_history_string(st.session_state.all_chats[st.session_state.current_chat_id][:-1])
                 
-                # 3. Always call the LLM, but let the PROMPT handle the refusal
+                # 3. Generate LLM Response
                 response = llm.invoke(
                     prompt_template.format(
                         context=context_payload,
@@ -162,12 +200,19 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
                     )
                 ).content
                 
-                # 4. Only show "Verified Sources" if they actually exist
-                if source_list and "I cannot assist" not in response:
-                    response += "\n\n**📑 Verified UAE/GCC Sources:**\n" + "\n".join([f"- {s}" for s in source_list])
-                
-                st.markdown(response)
-                st.session_state.all_chats[st.session_state.current_chat_id].append({"role": "assistant", "content": response})
+                # 4. Render Response and UI Expander for Sources
+                if source_list and "I cannot assist" not in response and "General Logistics Guidance" not in response:
+                    st.markdown(response)
+                    with st.expander("🔍 View Verified UAE/GCC Sources"):
+                        for source in source_list:
+                            st.markdown(f"- 📄 `{source}`")
+                    
+                    # Ensure memory gets both the text and the source notation
+                    memory_response = response + "\n\n*(Sources Verified in Knowledge Base)*"
+                    st.session_state.all_chats[st.session_state.current_chat_id].append({"role": "assistant", "content": memory_response})
+                else:
+                    st.markdown(response)
+                    st.session_state.all_chats[st.session_state.current_chat_id].append({"role": "assistant", "content": response})
                 
             except Exception as e:
                 st.error(f"Error: {str(e)}")
