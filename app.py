@@ -15,12 +15,15 @@ from langchain_core.output_parsers import StrOutputParser
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Add these lines to ensure the app is naming your traces
+# --- LANGSMITH OBSERVABILITY SETUP ---
+# LangChain looks for these specific OS environment variables to enable tracing
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY") 
 os.environ["LANGCHAIN_PROJECT"] = "Logistics_Copilot_Hackathon"
 
 st.set_page_config(page_title="UAE & GCC Logistics Copilot", page_icon="🚢", layout="wide")
 st.title("🚢 UAE & GCC Logistics Copilot")
-
 # 2. Load AI Engine
 @st.cache_resource
 def load_ai_engine():
