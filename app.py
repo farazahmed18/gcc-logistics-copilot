@@ -140,9 +140,11 @@ with st.sidebar:
     
     # --- MOVED METRICS HERE ---
     with st.expander("⚙️ System Architecture"):
-        st.metric("🧠 Core LLM", "Llama 3.3 (70B)")
-        st.metric("⚡ Orchestration", "LangChain & Groq")
-        st.metric("📚 Retrieval Engine", "ChromaDB Local")
+        st.markdown("**🧠 Core LLM**<br>Llama 3.3 (70B)", unsafe_allow_html=True)
+        st.write("") # small spacer
+        st.markdown("**⚡ Orchestration**<br>LangChain & Groq", unsafe_allow_html=True)
+        st.write("")
+        st.markdown("**📚 Retrieval Engine**<br>ChromaDB Local", unsafe_allow_html=True)
     st.divider()
     
     st.subheader("Conversations")
