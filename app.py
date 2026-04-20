@@ -141,12 +141,14 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
     with st.chat_message("assistant"):
         with st.spinner("Consulting GCC trade documents..."):
             try:
+                # 1. First, check if the retriever actually finds anything
                 raw_docs = retriever.invoke(user_input)
                 
-                # --- HARD GUARDRAIL: Only proceed if we found documents ---
                 if not raw_docs:
-                    response = "I am a specialized UAE & GCC Logistics AI. I do not have enough information in my database to answer this specific query accurately."
+                    # 2. Hard Gate: If no docs, don't even call the LLM for the answer
+                    response = "I am a specialized UAE & GCC Logistics AI. I do not have enough information in my local database to answer this accurately."
                 else:
+                    # 3. Normal Flow: Docs found, prepare context and ask LLM
                     context_payload, source_list = format_docs_with_sources(raw_docs)
                     chat_history_str = get_chat_history_string(st.session_state.all_chats[st.session_state.current_chat_id][:-1])
                     
@@ -158,6 +160,7 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
                         )
                     ).content
                     
+                    # Append the verified sources to the end
                     if source_list:
                         response += "\n\n**📑 Verified UAE/GCC Sources:**\n" + "\n".join([f"- {s}" for s in source_list])
                 
@@ -165,4 +168,4 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
                 st.session_state.all_chats[st.session_state.current_chat_id].append({"role": "assistant", "content": response})
                 
             except Exception as e:
-                st.error(f"Error connecting to AI engine: {str(e)}")
+                st.error(f"Trace Error: {str(e)}")
