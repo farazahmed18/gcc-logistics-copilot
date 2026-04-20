@@ -15,6 +15,9 @@ from langchain_core.output_parsers import StrOutputParser
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+# Add these lines to ensure the app is naming your traces
+os.environ["LANGCHAIN_PROJECT"] = "Logistics_Copilot_Hackathon"
+
 st.set_page_config(page_title="UAE & GCC Logistics Copilot", page_icon="🚢", layout="wide")
 st.title("🚢 UAE & GCC Logistics Copilot")
 
