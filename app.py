@@ -134,8 +134,8 @@ with st.sidebar:
     st.info("💡 **Pro-Tip:** Ask about JAFZA regulations, import steps, or VAT penalties for source-verified results.")
     
     # System Status Indicators
-    st.success("✅ Knowledge Base: Online")
-    st.success("✅ Tracing: LangSmith Active")
+    st.success("Knowledge Base: Online")
+    st.success("Tracing: LangSmith Active")
     st.divider()
     
     # --- MOVED METRICS HERE ---
@@ -145,7 +145,7 @@ with st.sidebar:
         st.metric("📚 Retrieval Engine", "ChromaDB Local")
     st.divider()
     
-    st.subheader("💬 Conversations")
+    st.subheader("Conversations")
     
     # New Chat Button
     if st.button("➕ New Chat", use_container_width=True):
