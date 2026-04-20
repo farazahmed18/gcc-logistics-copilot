@@ -33,8 +33,8 @@ st.markdown("""
         padding-bottom: 2rem;
     }
     
-    /* 🎯 Safely hide the entire right-side Streamlit toolbar (Share, Star, Deploy, etc.) */
-    [data-testid="stToolbar"] {display: none !important;}
+    /* 🎯 Safely hide ONLY the Deploy button */
+    .stAppDeployButton {display: none !important;}
     
     /* Style the main title */
     .stMarkdown h1 {
