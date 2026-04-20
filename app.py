@@ -142,26 +142,26 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
         with st.spinner("Consulting GCC trade documents..."):
             try:
                 raw_docs = retriever.invoke(user_input)
-                context_payload, source_list = format_docs_with_sources(raw_docs)
                 
-                # Fetch history for the current active chat
-                chat_history_str = get_chat_history_string(st.session_state.all_chats[st.session_state.current_chat_id][:-1])
-                
-                response_obj = llm.invoke(
-                    prompt_template.format(
-                        context=context_payload,
-                        question=user_input,
-                        chat_history=chat_history_str
-                    )
-                )
-                response = response_obj.content
-                
-                if source_list and "I cannot assist" not in response:
-                    response += "\n\n**📑 Verified UAE/GCC Sources:**\n" + "\n".join([f"- {s}" for s in source_list])
+                # --- HARD GUARDRAIL: Only proceed if we found documents ---
+                if not raw_docs:
+                    response = "I am a specialized UAE & GCC Logistics AI. I do not have enough information in my database to answer this specific query accurately."
+                else:
+                    context_payload, source_list = format_docs_with_sources(raw_docs)
+                    chat_history_str = get_chat_history_string(st.session_state.all_chats[st.session_state.current_chat_id][:-1])
+                    
+                    response = llm.invoke(
+                        prompt_template.format(
+                            context=context_payload,
+                            question=user_input,
+                            chat_history=chat_history_str
+                        )
+                    ).content
+                    
+                    if source_list:
+                        response += "\n\n**📑 Verified UAE/GCC Sources:**\n" + "\n".join([f"- {s}" for s in source_list])
                 
                 st.markdown(response)
-                
-                # Append assistant response to the specific active chat
                 st.session_state.all_chats[st.session_state.current_chat_id].append({"role": "assistant", "content": response})
                 
             except Exception as e:
