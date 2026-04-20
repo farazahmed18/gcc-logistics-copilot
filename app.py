@@ -37,19 +37,19 @@ st.markdown("""
     /* 🎯 Safely hide ONLY the Deploy button */
     .stAppDeployButton {display: none !important;}
     
-    /* Style the main title */
+    /* Style the main title to dynamically adapt to Light/Dark mode */
     .stMarkdown h1 {
-        color: #0f172a;
+        color: var(--text-color) !important;
         text-align: center;
         margin-bottom: 1rem;
     }
     
-    /* Give chat bubbles a clean, bordered box look */
+    /* Give chat bubbles a clean look that adapts to the current theme */
     .stChatMessage {
         border-radius: 12px;
         padding: 15px;
-        border: 1px solid #e2e8f0;
-        background-color: #f8fafc;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        background-color: var(--secondary-background-color) !important;
         margin-bottom: 10px;
     }
     </style>
