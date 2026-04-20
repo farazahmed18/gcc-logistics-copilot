@@ -36,7 +36,7 @@ st.markdown("""
         color: #0f172a; 
     }
     </style>
-    """, unsafe_allow_code=True)
+    """, unsafe_allow_html=True)
 
 st.title("🚢 UAE & GCC Logistics Copilot")
 
