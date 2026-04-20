@@ -17,7 +17,6 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 st.set_page_config(page_title="UAE & GCC Logistics Copilot", page_icon="🚢", layout="wide")
 st.title("🚢 UAE & GCC Logistics Copilot")
-st.sidebar.info("AI-Powered UAE & GCC Trade Intelligence | Source-Verified")
 
 # 2. Load AI Engine
 @st.cache_resource
@@ -71,17 +70,51 @@ def format_docs_with_sources(docs):
 def get_chat_history_string(messages):
     return "\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in messages[-5:]])
 
-# 5. UI Initialization
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# 5. UI Initialization & Multi-Chat Memory
+if "all_chats" not in st.session_state:
+    st.session_state.all_chats = {"Chat 1": []}
+if "current_chat_id" not in st.session_state:
+    st.session_state.current_chat_id = "Chat 1"
 
-for msg in st.session_state.messages:
+# --- SIDEBAR UI ---
+with st.sidebar:
+    st.info("AI-Powered UAE & GCC Trade Intelligence | Source-Verified")
+    st.divider()
+    st.subheader("💬 Chat History")
+    
+    # The "New Chat" Button
+    if st.button("➕ New Chat"):
+        new_id = f"Chat {len(st.session_state.all_chats) + 1}"
+        st.session_state.all_chats[new_id] = []
+        st.session_state.current_chat_id = new_id
+        st.rerun()
+
+    st.divider()
+    
+    # The Chat Selector (Radio Buttons)
+    selected_chat = st.radio(
+        "Previous Conversations",
+        options=list(st.session_state.all_chats.keys()),
+        index=list(st.session_state.all_chats.keys()).index(st.session_state.current_chat_id)
+    )
+    
+    # Switch chat if a different one is selected
+    if selected_chat != st.session_state.current_chat_id:
+        st.session_state.current_chat_id = selected_chat
+        st.rerun()
+
+# 6. Render the Active Chat
+active_history = st.session_state.all_chats[st.session_state.current_chat_id]
+
+for msg in active_history:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# 6. Specialized Logistics Chat Input
+# 7. Specialized Logistics Chat Input
 if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port procedures..."):
-    st.session_state.messages.append({"role": "user", "content": user_input})
+    # Append user message to the specific active chat
+    st.session_state.all_chats[st.session_state.current_chat_id].append({"role": "user", "content": user_input})
+    
     with st.chat_message("user"):
         st.markdown(user_input)
 
@@ -90,7 +123,9 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
             try:
                 raw_docs = retriever.invoke(user_input)
                 context_payload, source_list = format_docs_with_sources(raw_docs)
-                chat_history = get_chat_history_string(st.session_state.messages[:-1])
+                
+                # Fetch history for the current active chat only (excluding the brand new prompt)
+                chat_history = get_chat_history_string(st.session_state.all_chats[st.session_state.current_chat_id][:-1])
                 
                 response = llm.invoke(
                     prompt.format(
@@ -104,7 +139,9 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
                     response += "\n\n**📑 Verified UAE/GCC Sources:**\n" + "\n".join([f"- {s}" for s in source_list])
                 
                 st.markdown(response)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                
+                # Append assistant response to the specific active chat
+                st.session_state.all_chats[st.session_state.current_chat_id].append({"role": "assistant", "content": response})
                 
             except Exception as e:
                 st.error(f"Error: {str(e)}")
