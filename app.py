@@ -42,21 +42,22 @@ retriever, llm = load_ai_engine()
 
 # 3. Dubai & GCC Consultant Prompt
 template = """
-You are a Senior UAE & GCC Logistics Consultant. 
-Your goal is to provide precise insights on Dubai Customs, JAFZA/Free Zone regulations, and GCC-wide trade agreements.
+You are a Senior UAE & GCC Logistics Consultant.
 
 STRICT GUARDRAILS:
-1. SCOPE: Your expertise includes Import/Export procedures, Customs duties, VAT, Shipping costs, Vehicle imports (cars/bikes), and Free Zone laws.
-2. STRICT REFUSAL: If the user asks about ANYTHING completely unrelated to trade or logistics (e.g., recipes, name meanings, general chat), you MUST decline. Say EXACTLY: "I am a specialized UAE & GCC Logistics AI. I cannot assist with queries outside of regional trade and customs regulations."
-3. KEYWORD HIJACKING: If the intent is emotional or personal (e.g., "I'm sad"), apply the STRICT REFUSAL rule. However, if they ask about importing/exporting specific items like cars (e.g., i20, BMW), this IS within your domain.
-4. NO HALLUCINATION: You may ONLY answer using the provided context. If the context doesn't have the specific cost (like the exact shipping price of an i20), state that you have information on the *procedure* but not the specific live market price.
-5. SOURCES: You MUST list the document names found in the context.
-
-Chat History:
-{chat_history}
+1. SCOPE: Your expertise is STRICTLY UAE/GCC logistics, customs, and trade.
+2. REFUSAL: If the query is UNRELATED to regional trade (e.g. recipes, non-logistics general chat), say: "I am a specialized UAE & GCC Logistics AI. I cannot assist with queries outside of regional trade and customs regulations."
+3. HYBRID KNOWLEDGE: 
+   - If the 'Context from Local Knowledge Base' has the answer, use it and cite the sources.
+   - If the context is EMPTY but the question is a fundamental UAE/GCC logistics concept (like "What is JAFZA?"), provide a professional overview based on your general knowledge. 
+   - However, if you are using general knowledge, do NOT invent or hallucinate source document names.
+4. INTENT: If the user is emotional (e.g. "I'm sad"), refuse. If they are asking for business/logistics advice, be helpful.
 
 Context from Local Knowledge Base:
 {context}
+
+Chat History:
+{chat_history}
 
 Question: {question}
 Answer:"""
@@ -141,31 +142,28 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
     with st.chat_message("assistant"):
         with st.spinner("Consulting GCC trade documents..."):
             try:
-                # 1. First, check if the retriever actually finds anything
+                # 1. Get the docs
                 raw_docs = retriever.invoke(user_input)
+                context_payload, source_list = format_docs_with_sources(raw_docs)
                 
-                if not raw_docs:
-                    # 2. Hard Gate: If no docs, don't even call the LLM for the answer
-                    response = "I am a specialized UAE & GCC Logistics AI. I do not have enough information in my local database to answer this accurately."
-                else:
-                    # 3. Normal Flow: Docs found, prepare context and ask LLM
-                    context_payload, source_list = format_docs_with_sources(raw_docs)
-                    chat_history_str = get_chat_history_string(st.session_state.all_chats[st.session_state.current_chat_id][:-1])
-                    
-                    response = llm.invoke(
-                        prompt_template.format(
-                            context=context_payload,
-                            question=user_input,
-                            chat_history=chat_history_str
-                        )
-                    ).content
-                    
-                    # Append the verified sources to the end
-                    if source_list:
-                        response += "\n\n**📑 Verified UAE/GCC Sources:**\n" + "\n".join([f"- {s}" for s in source_list])
+                # 2. Get history
+                chat_history_str = get_chat_history_string(st.session_state.all_chats[st.session_state.current_chat_id][:-1])
+                
+                # 3. Always call the LLM, but let the PROMPT handle the refusal
+                response = llm.invoke(
+                    prompt_template.format(
+                        context=context_payload,
+                        question=user_input,
+                        chat_history=chat_history_str
+                    )
+                ).content
+                
+                # 4. Only show "Verified Sources" if they actually exist
+                if source_list and "I cannot assist" not in response:
+                    response += "\n\n**📑 Verified UAE/GCC Sources:**\n" + "\n".join([f"- {s}" for s in source_list])
                 
                 st.markdown(response)
                 st.session_state.all_chats[st.session_state.current_chat_id].append({"role": "assistant", "content": response})
                 
             except Exception as e:
-                st.error(f"Trace Error: {str(e)}")
+                st.error(f"Error: {str(e)}")
