@@ -120,6 +120,46 @@ def get_chat_history_string(messages):
     return "\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in messages[-5:]])
 
 # ==========================================
+# 5.5 DYNAMIC SUGGESTIONS ENGINE
+# ==========================================
+def get_dynamic_suggestions():
+    # Only generate these once per session to keep the app lightning fast
+    if "kb_suggestions" not in st.session_state:
+        try:
+            # 1. Pull a broad sample from your vector store
+            docs = retriever.invoke("Key regulations and procedures in UAE trade")
+            context = "\n".join([doc.page_content for doc in docs[:2]]) # Top 2 chunks
+            
+            # 2. Ask Llama to reverse-engineer questions from those chunks
+            prompt = f"""
+            Based ONLY on the text below, generate 3 distinct, short questions a user could ask to learn more.
+            Output ONLY the 3 questions, each on a new line. Do not use numbers, bullet points, or quotes.
+            Keep them under 10 words each.
+            Text: {context}
+            """
+            # Using slightly higher temperature (0.5) for more creative questions
+            llm_suggester = ChatGroq(groq_api_key=GROQ_API_KEY, model_name="llama-3.3-70b-versatile", temperature=0.5)
+            response = llm_suggester.invoke(prompt).content
+            
+            # 3. Clean up the response
+            questions = [q.strip("- *1234567890.\"\'") for q in response.split('\n') if len(q.strip()) > 5][:3]
+            
+            if len(questions) < 3:
+                raise Exception("Fallback needed")
+                
+            st.session_state.kb_suggestions = questions
+            
+        except Exception:
+            # Safe fallback just in case the LLM formatting breaks
+            st.session_state.kb_suggestions = [
+                "What is JAFZA?", 
+                "Explain VAT penalties.", 
+                "Customs clearance steps?"
+            ]
+            
+    return st.session_state.kb_suggestions
+
+# ==========================================
 # 6. UI SESSION STATE & SIDEBAR
 # ==========================================
 if "all_chats" not in st.session_state:
@@ -182,8 +222,23 @@ for msg in active_history:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port procedures..."):
+# --- NEW: SHOW SUGGESTIONS IF CHAT IS EMPTY ---
+button_val = None
+if len(active_history) == 0:
+    st.markdown("###### ✨ Suggested Topics from Knowledge Base")
+    suggestions = get_dynamic_suggestions()
     
+    # Create 3 clean columns for the buttons
+    cols = st.columns(3)
+    for i, suggestion in enumerate(suggestions):
+        if cols[i].button(suggestion, key=f"sug_{i}", use_container_width=True):
+            button_val = suggestion
+
+# --- CONSOLIDATE INPUT (Typing OR Button Click) ---
+chat_val = st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port procedures...")
+user_input = chat_val or button_val
+
+if user_input:
     # Generate Smart Title (On First Message Only)
     if len(st.session_state.all_chats[st.session_state.current_chat_id]) == 0:
         try:
@@ -231,6 +286,9 @@ if user_input := st.chat_input("Ask about Dubai Customs, JAFZA, GCC VAT, or Port
                 else:
                     st.markdown(response)
                     st.session_state.all_chats[st.session_state.current_chat_id].append({"role": "assistant", "content": response})
+                
+                # Force a rerun so the suggestions disappear and the chat history updates cleanly
+                st.rerun()
                 
             except Exception as e:
                 st.error(f"Error: {str(e)}")
