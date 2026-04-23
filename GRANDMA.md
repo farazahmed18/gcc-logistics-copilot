@@ -11,5 +11,5 @@ Normally, AI can sometimes guess or hallucinate if it doesn't know the answer. S
 * **The Frontend:** Ive used streamlit to deploy my app. Ive worked a lot on the UI..so instead of a basic prototype, I made a custom theme-aware UI that also has different prompt suggestions and the app also has multi chat session memory.
 * **The Brain (Llama & Groq):** The super-fast engine that understands what the person is asking. It reads all the complex rules and instantly translates them into easy to read and understandable answer so the user doesnt have to wait long and understands easily
 * **The VectorStore (ChromaDB):** This is the secure digital vault where I stored all the government rulebooks. First i uploaded all the PDFs in the rag_data file...then my code reads those PDFs and chops them into smaller paragraphs and uses an embedding model (HuggingFace) to translate those english paragraphs to vectors. 
-* **The Manager (LangChain):** The tool that makes the Brain and the VectorStore talk to each other smoothly.
-* **The Inspector (LangSmith):** This is where i watch all the ongoing chats and all the activities in real-time.
+* **LangChain:** This is the tool that makes the Brain and the VectorStore talk to each other smoothly.
+* **LangSmith:** This is where i watch all the ongoing chats and all the activities in real-time.
