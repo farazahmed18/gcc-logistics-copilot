@@ -2,7 +2,7 @@
   <h1>🚢 UAE & GCC Logistics Copilot</h1>
   <h3><i>Empowering Trade with AI-Driven Intelligence</i></h3>
   <br>
-  <a href="https://gcc-logisticsai-faraz.streamlit.app">
+  <a href="">
     <img src="https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit" alt="Live Demo">
   </a>
 </div>
